@@ -1,12 +1,18 @@
 
 import os
 import csv
+import platform 
+
 
 estados = {'q0', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q12', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18', 'q19', 'q20', 'q21', 'q22', 'q23', 'q24', 'q25', 'q26', 'q27', 'q28'}
 alfabeto = {'i', 'c', 'v', 'r', 'p', 's', 't', 'j', 'o', 'x', 'z', 'l', 'f', 'n', 'm', 'y', 'u', 'k', 'b', 'a', 'q', 'd', 'e', 'g', 'h'}
 estado_inicial = 'q0'
 estado_final = {'q0'}
 
+
+#=============================================
+# Passos 
+#=============================================
 passos = { # AÇÕES/OPERAÇÕES RELACIONADAS A CADA SÍMBOLO
 'i' : {"realiza login em conta"},
 'c' : {"abre o menu de compra de créditos"},
@@ -33,6 +39,10 @@ passos = { # AÇÕES/OPERAÇÕES RELACIONADAS A CADA SÍMBOLO
 'e' : {"verifica se o usuário é válido"},
 'g' : {"verifica se o menu é válido para tal operação"},
 'h' : {"verifica se o valor mínimo foi atingido"}}
+
+#=============================================
+# Transicoes
+#=============================================
 
 transicoes = { # DESCRIÇÃO TEXTUAL DO AUTÔMATO, NO FORMATO -> estado_atual : {simbolo_lido 1: estado_destino 1}, ... , {simbolo_lido n: estado_destino n}
     'q0':  {'i': 'q1'},
@@ -66,18 +76,73 @@ transicoes = { # DESCRIÇÃO TEXTUAL DO AUTÔMATO, NO FORMATO -> estado_atual : 
     'q28': {'t': 'q11', 'b': 'q1'}
 }
 
+#=============================================
+# Funcoes Auxiliares
+#=============================================
+def limpar_tela():
+    if platform.system() == "Windows":
+        os.system('cls')
+    else:
+        os.system('clear')
+
+def enter_input():
+    entrada = input('\n[input]: ')
+    return entrada
+
+def print_menu():
+    print("\t=========================================================")
+    print("\t|        Bem vindo ao simulador em autômato TRI!        |")
+    print("\t|  O sistema de transporte integrado de Porto Alegre    |")
+    print("\t=========================================================")
+    print("DIGITE: ")
+    print("[0] para sair")
+    print("[1] para inserir uma palavra de entrada")
+    print("[2] para inserir um nome de arquivo de entradas")
+    print("[3] para visualizar as operações disponiveis")
+
+def insira_tecla_continuar():
+    print("\nInsira uma tecla para continuar...",end="")
+    enter_input()
+
+def print_msg(mensagem):
+    frase = (f"|                 {mensagem}                 |")
+    aux_print_linha(len(frase))  #linha com "========"
+    print(frase) #print da msg 
+    aux_print_linha(len(frase))
+    insira_tecla_continuar()
+
+def aux_print_linha(tamanho_linha):
+    for i in range(tamanho_linha): 
+        print("=",end="")
+    print()
+
+
+def handle_arquivo(arquivo):
+    try:
+        with open(arquivo, "r") as handle:
+            leitor = csv.reader(handle)
+            for row in leitor:
+                for i in range(len(row)):
+                    processa_automato(row[i])
+                    insira_tecla_continuar()
+                    limpar_tela()
+    except:
+        print_msg("Erro ao Abrir o arquivo!")
+#=============================================
+# funcao Simulate 
+#=============================================
 def simulate(input):
     estado_atual = estado_inicial # processamento começa no estado inicial
 
     for simbolo in input: # para cada símbolo da palavra de entrada
         if simbolo not in alfabeto: # retorna erro caso símbolo não pertence ao alfabeto
-            raise ValueError(f"Simbolo lido '{simbolo}' não pertence ao alfabeto.")
+            raise ValueError(f"Simbolo lido '{simbolo}' -> não pertence ao alfabeto.")
         
         if simbolo in transicoes[estado_atual]: # caso o simbolo seja válido para o estado atual (!= indefinição)
-            print(str(passos[simbolo]) + " OK")
+            print(f'{passos[simbolo]} -> OK')
             estado_atual = transicoes[estado_atual][simbolo]
         else:
-            print("Erro, era esperado: ", end='')
+            print("\nErro, era esperado: ", end='')
             for i in transicoes[estado_atual]:
                 print(i + ' | ', end='')
             print()
@@ -85,13 +150,22 @@ def simulate(input):
 
     return estado_atual in estado_final
 
+#=============================================
+# Proessa Automato 
+#=============================================
+
 def processa_automato(palavra):
     saida = simulate(palavra)
+    msg_sucesso = (f"A entrada '{palavra}' PERTENCE a linguagem.")
+    msg_erro = (f"A entrada '{palavra}' NAO PERTENCE a linguagem.")
     if saida:
-        print(f"A entrada '{palavra}' pertence a linguagem.")
+        print_msg(msg_sucesso)
     else:
-        print(f"A entrada '{palavra}' não pertence a linguagem.")
+        print_msg(msg_erro)
 
+#=============================================
+# Funcao Terminal
+#=============================================
 def terminal():
     global passos
     resposta = '10'
@@ -99,53 +173,43 @@ def terminal():
     palavra = None
 
     while (resposta != None):
-        os.system('cls')
-        print("        Bem vindo ao simulador em autômato TRI!")
-        print("   O sistema de transporte integrado de Porto Alegre")
-        print()
-        print("Digite 0 para sair")
-        print("Digite 1 para inserir uma palavra de entrada")
-        print("Digite 2 para inserir um nome de arquivo de entradas")
-        print("Digite 3 para visualizar as operações disponiveis")
+        limpar_tela()
+        print_menu()
 
-        resposta = input()
+        resposta = enter_input()
 
         if(resposta == '1'):
-            os.system('cls')
-            palavra = input()
+            limpar_tela()
+            print("Digite uma palavra")
+            palavra = enter_input()
             processa_automato(palavra)
-            print("\n0Insira uma tecla para continuar")
-            input()
+            print("\nInsira uma tecla para continuar...")
+            enter_input()
 
         elif(resposta == '2'):
-            os.system('cls')
-            print("Insira o nome do arquivo.")
-            arquivo = input()
-            with open(arquivo, "r") as handle:
-                leitor = csv.reader(handle)
-                for row in leitor:
-                    for i in range(len(row)):
-                        processa_automato(row[i])
-                        print("\nInsira uma tecla para continuar")
-                        input()
-                        os.system('cls')
+            limpar_tela()
+            print("Insira o nome do arquivo:")
+            arquivo = enter_input()
+            handle_arquivo(arquivo)
 
         elif(resposta == '3'):
-            os.system('cls')
-            for i in passos:
-                print(i, end='')
-                print(': ', end='')
-                print(passos[i])
-            print("\nInsira uma tecla para continuar")
-            input()
+            for chave, valor in passos.items():
+                print(f" {chave}: {valor}")
+            insira_tecla_continuar()
 
         elif(resposta == '0'):
             resposta = None
         
         else:
-            os.system('cls')
-            print("Operação inválida")
-            print("\nInsira uma tecla para continuar")
-            input()
+            limpar_tela()
+            print_msg("Operação inválida!")
 
-terminal()
+#=============================================
+# Main
+#=============================================
+
+def main():
+    terminal()
+
+if __name__ == "__main__":
+    main()
